@@ -1,0 +1,12 @@
+{
+  "paths": {
+    "/validate": {
+      "name": "/validate",
+      "lambdaFunction": "pushnotificationdemo1e717369",
+      "permissions": {
+        "setting": "open"
+      },
+      "methods": ["POST"]
+    }
+  }
+}

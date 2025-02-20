@@ -1,0 +1,8 @@
+{
+  "httpMethod": "POST",
+  "path": "/phone",
+  "body": "{\"action\":\"sendOTP\",\"phoneNumber\":\"+1234567890\"}",
+  "headers": {
+    "Content-Type": "application/json"
+  }
+}

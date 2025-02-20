@@ -5,6 +5,22 @@
       "service": "Pinpoint"
     }
   },
+  "api": {
+    "phoneValidationApi": {
+      "dependsOn": [
+        {
+          "attributes": [
+            "Name",
+            "Arn"
+          ],
+          "category": "function",
+          "resourceName": "pushnotificationdemo1e717369"
+        }
+      ],
+      "providerPlugin": "awscloudformation",
+      "service": "API Gateway"
+    }
+  },
   "auth": {
     "pushnotificationdemo": {
       "dependsOn": [],
@@ -21,6 +37,37 @@
       "providerPlugin": "awscloudformation",
       "service": "Cognito",
       "serviceType": "managed"
+    }
+  },
+  "function": {
+    "pushnotificationdemo1e717369": {
+      "build": true,
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    }
+  },
+  "parameters": {
+    "AMPLIFY_function_pushnotificationdemo1e717369_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "pushnotificationdemo1e717369"
+        }
+      ]
+    },
+    "AMPLIFY_function_pushnotificationdemo1e717369_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "pushnotificationdemo1e717369"
+        }
+      ]
+    }
+  },
+  "storage": {
+    "phoneDeviceTable": {
+      "providerPlugin": "awscloudformation",
+      "service": "DynamoDB"
     }
   }
 }

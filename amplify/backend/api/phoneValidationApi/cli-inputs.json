@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "paths": {
+    "/phone": {
+      "name": "/phone",
+      "lambdaFunction": "pushnotificationdemo1e717369",
+      "permissions": {
+        "setting": "open"
+      }
+    }
+  }
+}

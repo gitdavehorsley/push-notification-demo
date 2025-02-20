@@ -17,6 +17,12 @@
       },
       "analytics": {
         "pushnotificationdemo": {}
+      },
+      "function": {
+        "pushnotificationdemo1e717369": {
+          "deploymentBucketName": "amplify-pushnotificationdemo-dev-aa2bb-deployment",
+          "s3Key": "amplify-builds/pushnotificationdemo1e717369-56507836494c46333665-build.zip"
+        }
       }
     }
   }

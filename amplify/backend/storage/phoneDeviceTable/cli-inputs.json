@@ -1,0 +1,14 @@
+{
+  "resourceName": "phoneDeviceTable",
+  "tableName": "phoneDeviceRegistration",
+  "partitionKey": {
+    "fieldName": "phoneNumber",
+    "fieldType": "string"
+  },
+  "sortKey": {
+    "fieldName": "deviceId",
+    "fieldType": "string"
+  },
+  "gsi": [],
+  "triggerFunctions": []
+}

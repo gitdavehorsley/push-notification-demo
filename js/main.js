@@ -1,14 +1,16 @@
 import config from './config.js';
-import { Amplify, Notifications } from 'aws-amplify';
 
-// API configuration
-const API_ENDPOINT = config.API_ENDPOINT;
-
-// Configure Amplify
+// Configure AWS Amplify
+const { Amplify, Notifications } = window.aws_amplify;
 Amplify.configure({
-    // Amplify configuration will be auto-generated
-    aws_project_region: 'us-east-1',
-    // Other configurations will be added by Amplify CLI
+    API: {
+        endpoints: [
+            {
+                name: "PushNotificationAPI",
+                endpoint: config.API_ENDPOINT
+            }
+        ]
+    }
 });
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -80,20 +82,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!verificationInProgress) {
                 // Send OTP
-                const response = await fetch(API_ENDPOINT, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'send_otp',
-                        phone_number: phoneNumber
-                    })
+                const data = await Amplify.API.post('PushNotificationAPI', '/validate', {
+                    body: {
+                        action: 'sendOTP',
+                        phoneNumber: phoneNumber
+                    }
                 });
-
-                const data = await response.json();
                 
-                if (data.success) {
+                if (!data.error) {
                     // Show OTP input field
                     verificationInProgress = true;
                     signupButton.textContent = 'VERIFY CODE';
@@ -121,22 +117,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                const response = await fetch(API_ENDPOINT, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'verify_otp',
-                        phone_number: phoneNumber,
-                        otp_code: otpCode,
-                        device_id: 'web-' + Date.now() // Simple device ID generation
-                    })
+                const data = await Amplify.API.post('PushNotificationAPI', '/validate', {
+                    body: {
+                        action: 'verifyOTP',
+                        phoneNumber: phoneNumber,
+                        otp: otpCode,
+                        deviceId: 'web-' + Date.now() // Simple device ID generation
+                    }
                 });
-
-                const data = await response.json();
                 
-                if (data.success) {
+                if (!data.error) {
                     // Remove OTP input and reset state
                     if (otpInputElement) {
                         otpInputElement.remove();

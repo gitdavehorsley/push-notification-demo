@@ -1,10 +1,10 @@
 // Environment-specific configuration
 const config = {
     dev: {
-        API_ENDPOINT: 'https://p674zxo5d0.execute-api.us-east-1.amazonaws.com/dev/verify'
+        API_ENDPOINT: 'https://p674zxo5d0.execute-api.us-east-1.amazonaws.com/dev/validate'
     },
     prod: {
-        API_ENDPOINT: '/verify' // In prod, API Gateway URL will be determined by Amplify
+        API_ENDPOINT: '/validate' // In prod, API Gateway URL will be determined by Amplify
     }
 };
 

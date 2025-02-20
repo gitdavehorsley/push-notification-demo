@@ -1,0 +1,12 @@
+{
+  "version": "1",
+  "cognitoConfig": {
+    "identityPoolName": "pushnotificationdemo_identitypool_cc8b3515",
+    "allowUnauthenticatedIdentities": true,
+    "authSelections": "identityPoolOnly",
+    "resourceName": "pushnotificationdemo",
+    "sharedId": "cc8b3515",
+    "serviceName": "Cognito",
+    "useDefault": "manual"
+  }
+}

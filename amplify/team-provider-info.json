@@ -1,0 +1,23 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-pushnotificationdemo-dev-aa2bb-authRole",
+      "UnauthRoleArn": "arn:aws:iam::829591350088:role/amplify-pushnotificationdemo-dev-aa2bb-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::829591350088:role/amplify-pushnotificationdemo-dev-aa2bb-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-pushnotificationdemo-dev-aa2bb-deployment",
+      "UnauthRoleName": "amplify-pushnotificationdemo-dev-aa2bb-unauthRole",
+      "StackName": "amplify-pushnotificationdemo-dev-aa2bb",
+      "StackId": "arn:aws:cloudformation:us-east-1:829591350088:stack/amplify-pushnotificationdemo-dev-aa2bb/297c2f00-efb8-11ef-b3ce-1237097a97dd",
+      "AmplifyAppId": "d3ljvakgnw3v0h"
+    },
+    "categories": {
+      "auth": {
+        "pushnotificationdemo": {}
+      },
+      "analytics": {
+        "pushnotificationdemo": {}
+      }
+    }
+  }
+}

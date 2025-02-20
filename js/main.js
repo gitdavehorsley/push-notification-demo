@@ -1,7 +1,15 @@
 import config from './config.js';
+import { Amplify, Notifications } from 'aws-amplify';
 
 // API configuration
 const API_ENDPOINT = config.API_ENDPOINT;
+
+// Configure Amplify
+Amplify.configure({
+    // Amplify configuration will be auto-generated
+    aws_project_region: 'us-east-1',
+    // Other configurations will be added by Amplify CLI
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     const phoneInput = document.getElementById('phoneInput');
@@ -14,21 +22,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // Set initial button text
     signupButton.textContent = 'SIGN UP';
 
-    // Check if push notifications are supported
-    if (!('Notification' in window)) {
-        updateStatus('Push notifications are not supported by your browser', 'error');
-        signupButton.disabled = true;
-        return;
+    // Initialize Amplify Notifications
+    async function initializeNotifications() {
+        try {
+            const permission = await Notifications.getPushNotification();
+            if (permission === 'granted') {
+                notificationPermissionGranted = true;
+            } else if (permission === 'denied') {
+                updateStatus('Push notifications are blocked. Please enable them in your browser settings.', 'error');
+                signupButton.disabled = true;
+                return;
+            }
+        } catch (error) {
+            console.error('Error initializing notifications:', error);
+            updateStatus('Push notifications are not supported', 'error');
+            signupButton.disabled = true;
+            return;
+        }
     }
 
-    // Initialize notification state
-    if (Notification.permission === 'granted') {
-        notificationPermissionGranted = true;
-    } else if (Notification.permission === 'denied') {
-        updateStatus('Push notifications are blocked. Please enable them in your browser settings.', 'error');
-        signupButton.disabled = true;
-        return;
-    }
+    // Initialize notifications on load
+    initializeNotifications();
 
     // Phone number input handler
     phoneInput.addEventListener('input', (e) => {
@@ -52,14 +66,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // If notification permission not granted yet, request it first
+            // Request notification permission using Amplify
             if (!notificationPermissionGranted) {
-                const permission = await Notification.requestPermission();
-                if (permission !== 'granted') {
+                try {
+                    await Notifications.requestPermission();
+                    notificationPermissionGranted = true;
+                } catch (error) {
+                    console.error('Error requesting notification permission:', error);
                     updateStatus('Please allow notifications to continue', 'error');
                     return;
                 }
-                notificationPermissionGranted = true;
             }
 
             if (!verificationInProgress) {

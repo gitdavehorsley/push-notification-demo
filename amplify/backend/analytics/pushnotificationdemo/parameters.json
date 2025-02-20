@@ -1,0 +1,21 @@
+{
+    "appName": "pushnotificationdemo",
+    "roleName": "pinpointLambdaRolef5d13a48",
+    "cloudformationPolicyName": "cloudformationPolicyf5d13a48",
+    "cloudWatchPolicyName": "cloudWatchPolicyf5d13a48",
+    "pinpointPolicyName": "pinpointPolicyf5d13a48",
+    "authPolicyName": "pinpoint_amplify_f5d13a48",
+    "unauthPolicyName": "pinpoint_amplify_f5d13a48",
+    "authRoleName": {
+        "Ref": "AuthRoleName"
+    },
+    "unauthRoleName": {
+        "Ref": "UnauthRoleName"
+    },
+    "authRoleArn": {
+        "Fn::GetAtt": [
+            "AuthRole",
+            "Arn"
+        ]
+    }
+}

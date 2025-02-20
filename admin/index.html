@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Push Notification Demo</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/admin.css">
+</head>
+<body>
+    <div class="container">
+        <header class="admin-header">
+            <h1>Admin Dashboard</h1>
+            <p class="subtitle">Manage Push Notifications and Promotions</p>
+        </header>
+
+        <main>
+            <div class="admin-grid">
+                <!-- New Promotion Form -->
+                <section class="admin-card">
+                    <h2>Create New Promotion</h2>
+                    <form id="promotionForm" class="promotion-form">
+                        <div class="form-group">
+                            <label for="title">Title</label>
+                            <input type="text" id="title" required placeholder="Enter promotion title">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <textarea id="description" required placeholder="Enter promotion description"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="scheduledTime">Schedule Time</label>
+                            <input type="datetime-local" id="scheduledTime" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="image">Image (Optional)</label>
+                            <input type="file" id="image" accept="image/*">
+                        </div>
+                        
+                        <button type="submit" class="primary-button">Schedule Promotion</button>
+                    </form>
+                </section>
+
+                <!-- Scheduled Promotions -->
+                <section class="admin-card">
+                    <h2>Scheduled Promotions</h2>
+                    <div class="table-container">
+                        <table id="promotionsTable">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Scheduled Time</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4" class="empty-state">No promotions scheduled</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Subscriber Stats -->
+                <section class="admin-card">
+                    <h2>Subscriber Statistics</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Total Subscribers</h3>
+                            <p class="stat-number">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Push Enabled</h3>
+                            <p class="stat-number">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>SMS Verified</h3>
+                            <p class="stat-number">0</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <footer>
+            <p>© 2025 Push Notification Demo. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script type="module" src="../js/admin.js"></script>
+</body>
+</html>

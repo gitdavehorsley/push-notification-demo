@@ -1,0 +1,359 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Infrastructure for Push Notification Phone Verification System'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - prod
+    Description: Environment name for resource prefixing
+
+  LambdaMemory:
+    Type: Number
+    Default: 128
+    AllowedValues: [128, 256, 512, 1024]
+    Description: Memory allocation for Lambda function (MB)
+
+  LambdaTimeout:
+    Type: Number
+    Default: 30
+    MinValue: 3
+    MaxValue: 900
+    Description: Lambda function timeout in seconds
+
+Resources:
+  # DynamoDB Tables
+  PushNotificationSubscribersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${Environment}-push-notification-subscribers
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: phone_number
+          AttributeType: S
+        - AttributeName: device_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: phone_number
+          KeyType: HASH
+        - AttributeName: device_id
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+
+  PhoneVerificationCodesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${Environment}-phone-verification-codes
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: phone_number
+          AttributeType: S
+      KeySchema:
+        - AttributeName: phone_number
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: expiration_time
+        Enabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+
+  # Lambda Function Role
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                Resource:
+                  - !GetAtt PushNotificationSubscribersTable.Arn
+                  - !GetAtt PhoneVerificationCodesTable.Arn
+        - PolicyName: SNSPublish
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: '*'
+
+  # Lambda Function
+  ValidatePhoneNumberFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-validate-phone-number
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        ZipFile: |
+          const AWS = require('aws-sdk');
+          const dynamodb = new AWS.DynamoDB.DocumentClient();
+          const sns = new AWS.SNS();
+
+          const SUBSCRIBERS_TABLE = process.env.SUBSCRIBERS_TABLE;
+          const VERIFICATION_CODES_TABLE = process.env.VERIFICATION_CODES_TABLE;
+          const OTP_EXPIRATION_MINUTES = 5;
+          const MAX_OTP_ATTEMPTS = 3;
+
+          function generateOTP() {
+            return Math.floor(1000 + Math.random() * 9000).toString();
+          }
+
+          async function sendOTP(phoneNumber) {
+            const otp = generateOTP();
+            const expirationTime = Math.floor(Date.now() / 1000) + (OTP_EXPIRATION_MINUTES * 60);
+            
+            await dynamodb.put({
+              TableName: VERIFICATION_CODES_TABLE,
+              Item: {
+                phone_number: phoneNumber,
+                otp_code: otp,
+                expiration_time: expirationTime,
+                attempts: 0
+              }
+            }).promise();
+
+            await sns.publish({
+              Message: `Your verification code is: ${otp}. It will expire in ${OTP_EXPIRATION_MINUTES} minutes.`,
+              PhoneNumber: phoneNumber
+            }).promise();
+
+            return { success: true, message: 'OTP sent successfully' };
+          }
+
+          async function verifyOTP(phoneNumber, otpCode, deviceId) {
+            const verificationRecord = await dynamodb.get({
+              TableName: VERIFICATION_CODES_TABLE,
+              Key: { phone_number: phoneNumber }
+            }).promise();
+
+            if (!verificationRecord.Item) {
+              return { success: false, message: 'No verification code found' };
+            }
+
+            const record = verificationRecord.Item;
+            const currentTime = Math.floor(Date.now() / 1000);
+
+            if (currentTime > record.expiration_time) {
+              await dynamodb.delete({
+                TableName: VERIFICATION_CODES_TABLE,
+                Key: { phone_number: phoneNumber }
+              }).promise();
+              return { success: false, message: 'Verification code expired' };
+            }
+
+            if (record.attempts >= MAX_OTP_ATTEMPTS) {
+              await dynamodb.delete({
+                TableName: VERIFICATION_CODES_TABLE,
+                Key: { phone_number: phoneNumber }
+              }).promise();
+              return { success: false, message: 'Maximum attempts exceeded' };
+            }
+
+            if (record.otp_code !== otpCode) {
+              await dynamodb.update({
+                TableName: VERIFICATION_CODES_TABLE,
+                Key: { phone_number: phoneNumber },
+                UpdateExpression: 'SET attempts = attempts + :inc',
+                ExpressionAttributeValues: { ':inc': 1 }
+              }).promise();
+              return { success: false, message: 'Invalid verification code' };
+            }
+
+            // OTP is valid, store subscriber info
+            await dynamodb.put({
+              TableName: SUBSCRIBERS_TABLE,
+              Item: {
+                phone_number: phoneNumber,
+                device_id: deviceId,
+                subscription_date: new Date().toISOString(),
+                verified: true
+              }
+            }).promise();
+
+            // Delete verification record
+            await dynamodb.delete({
+              TableName: VERIFICATION_CODES_TABLE,
+              Key: { phone_number: phoneNumber }
+            }).promise();
+
+            return { success: true, message: 'Phone number verified successfully' };
+          }
+
+          exports.handler = async (event) => {
+            try {
+              const { action, phone_number, device_id, otp_code } = event;
+              
+              if (!phone_number || !/^\+?[1-9]\d{1,14}$/.test(phone_number)) {
+                return {
+                  statusCode: 400,
+                  body: JSON.stringify({ success: false, message: 'Invalid phone number format' })
+                };
+              }
+
+              let result;
+              if (action === 'send_otp') {
+                result = await sendOTP(phone_number);
+              } else if (action === 'verify_otp') {
+                if (!device_id || !otp_code) {
+                  return {
+                    statusCode: 400,
+                    body: JSON.stringify({ success: false, message: 'Missing device_id or otp_code' })
+                  };
+                }
+                result = await verifyOTP(phone_number, otp_code, device_id);
+              } else {
+                return {
+                  statusCode: 400,
+                  body: JSON.stringify({ success: false, message: 'Invalid action' })
+                };
+              }
+
+              return {
+                statusCode: result.success ? 200 : 400,
+                body: JSON.stringify(result)
+              };
+            } catch (error) {
+              console.error('Error:', error);
+              return {
+                statusCode: 500,
+                body: JSON.stringify({ success: false, message: 'Internal server error' })
+              };
+            }
+          };
+      Environment:
+        Variables:
+          SUBSCRIBERS_TABLE: !Ref PushNotificationSubscribersTable
+          VERIFICATION_CODES_TABLE: !Ref PhoneVerificationCodesTable
+      MemorySize: !Ref LambdaMemory
+      Timeout: !Ref LambdaTimeout
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+
+  # API Gateway
+  ApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub ${Environment}-phone-verification-api
+      Description: API for phone number verification
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+
+  ApiResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ParentId: !GetAtt ApiGateway.RootResourceId
+      PathPart: verify
+
+  ApiMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref ApiResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ValidatePhoneNumberFunction.Arn}/invocations
+      MethodResponses:
+        - StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+        - StatusCode: '400'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+        - StatusCode: '500'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+
+  ApiCorsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref ApiResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,POST'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  ApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: ApiMethod
+    Properties:
+      RestApiId: !Ref ApiGateway
+
+  ApiStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      RestApiId: !Ref ApiGateway
+      DeploymentId: !Ref ApiDeployment
+      StageName: !Ref Environment
+
+  # Lambda Permission for API Gateway
+  LambdaApiPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ValidatePhoneNumberFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*
+
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/verify
+
+  SubscribersTableName:
+    Description: DynamoDB Subscribers Table Name
+    Value: !Ref PushNotificationSubscribersTable
+
+  VerificationCodesTableName:
+    Description: DynamoDB Verification Codes Table Name
+    Value: !Ref PhoneVerificationCodesTable
+
+  LambdaFunctionArn:
+    Description: Lambda Function ARN
+    Value: !GetAtt ValidatePhoneNumberFunction.Arn

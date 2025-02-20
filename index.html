@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Push Notification Demo</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Stay Updated</h1>
+            <p class="subtitle">Never miss our special promotions and updates!</p>
+        </header>
+
+        <main>
+            <div class="subscription-card">
+            <div class="signup-section">
+                <h2>Sign Up for Updates</h2>
+                <p>Get instant updates via browser notifications and SMS</p>
+                <div class="input-group">
+                    <input type="tel" id="phoneInput" placeholder="Enter your phone number" pattern="[0-9]{10}" maxlength="10">
+                    <button id="signupButton" class="primary-button">Sign Up</button>
+                </div>
+                <div id="statusMessage" class="status-message"></div>
+            </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>© 2025 Push Notification Demo. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

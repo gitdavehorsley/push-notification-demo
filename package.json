@@ -1,0 +1,20 @@
+{
+  "name": "push-notification-demo",
+  "version": "1.0.0",
+  "description": "Web application with push notifications and phone verification",
+  "scripts": {
+    "start": "python3 -m http.server 3000",
+    "deploy": "aws cloudformation deploy --template-file infrastructure/template.yaml --stack-name push-notification-demo --parameter-overrides Environment=dev --capabilities CAPABILITY_IAM",
+    "get-api-url": "aws cloudformation describe-stacks --stack-name push-notification-demo --query 'Stacks[0].Outputs[?OutputKey==`ApiEndpoint`].OutputValue' --output text"
+  },
+  "keywords": [
+    "push-notifications",
+    "aws",
+    "lambda",
+    "dynamodb",
+    "sns",
+    "otp"
+  ],
+  "author": "",
+  "license": "MIT"
+}

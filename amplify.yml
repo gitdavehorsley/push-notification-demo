@@ -7,7 +7,7 @@ frontend:
     build:
       commands:
         - mkdir -p assets/js
-        - cp node_modules/aws-amplify/dist/aws-amplify.min.js assets/js/
+        - curl -o assets/js/aws-amplify.min.js https://unpkg.com/aws-amplify@6.0.12/dist/aws-amplify.min.js
   artifacts:
     baseDirectory: /
     files:

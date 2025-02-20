@@ -6,8 +6,7 @@ frontend:
         - npm install
     build:
       commands:
-        - mkdir -p assets/js
-        - curl -o assets/js/aws-amplify.min.js https://unpkg.com/aws-amplify@6.0.12/dist/aws-amplify.min.js
+        - echo "No build commands needed"
   artifacts:
     baseDirectory: /
     files:

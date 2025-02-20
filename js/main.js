@@ -1,50 +1,14 @@
 import config from './config.js';
 
-// Configure AWS Amplify
-const { Amplify, Notifications } = window.aws_amplify;
-Amplify.configure({
-    API: {
-        endpoints: [
-            {
-                name: "PushNotificationAPI",
-                endpoint: config.API_ENDPOINT
-            }
-        ]
-    }
-});
-
 document.addEventListener('DOMContentLoaded', () => {
     const phoneInput = document.getElementById('phoneInput');
     const signupButton = document.getElementById('signupButton');
     const statusMessage = document.getElementById('statusMessage');
     let verificationInProgress = false;
     let otpInputElement = null;
-    let notificationPermissionGranted = false;
 
     // Set initial button text
     signupButton.textContent = 'SIGN UP';
-
-    // Initialize Amplify Notifications
-    async function initializeNotifications() {
-        try {
-            const permission = await Notifications.getPushNotification();
-            if (permission === 'granted') {
-                notificationPermissionGranted = true;
-            } else if (permission === 'denied') {
-                updateStatus('Push notifications are blocked. Please enable them in your browser settings.', 'error');
-                signupButton.disabled = true;
-                return;
-            }
-        } catch (error) {
-            console.error('Error initializing notifications:', error);
-            updateStatus('Push notifications are not supported', 'error');
-            signupButton.disabled = true;
-            return;
-        }
-    }
-
-    // Initialize notifications on load
-    initializeNotifications();
 
     // Phone number input handler
     phoneInput.addEventListener('input', (e) => {
@@ -68,26 +32,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Request notification permission using Amplify
-            if (!notificationPermissionGranted) {
-                try {
-                    await Notifications.requestPermission();
-                    notificationPermissionGranted = true;
-                } catch (error) {
-                    console.error('Error requesting notification permission:', error);
-                    updateStatus('Please allow notifications to continue', 'error');
-                    return;
-                }
-            }
-
             if (!verificationInProgress) {
                 // Send OTP
-                const data = await Amplify.API.post('PushNotificationAPI', '/validate', {
-                    body: {
+                const response = await fetch(config.API_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
                         action: 'sendOTP',
                         phoneNumber: phoneNumber
-                    }
+                    })
                 });
+                const data = await response.json();
                 
                 if (!data.error) {
                     // Show OTP input field
@@ -117,14 +74,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                const data = await Amplify.API.post('PushNotificationAPI', '/validate', {
-                    body: {
+                const response = await fetch(config.API_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
                         action: 'verifyOTP',
                         phoneNumber: phoneNumber,
                         otp: otpCode,
                         deviceId: 'web-' + Date.now() // Simple device ID generation
-                    }
+                    })
                 });
+                const data = await response.json();
                 
                 if (!data.error) {
                     // Remove OTP input and reset state

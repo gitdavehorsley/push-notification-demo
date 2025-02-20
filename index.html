@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://*.amazonaws.com https://*.amplifyapp.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://*.amazonaws.com https://*.amplifyapp.com https://*.execute-api.us-east-1.amazonaws.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
     <title>Push Notification Demo</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -33,7 +33,6 @@
         </footer>
     </div>
 
-    <script src="assets/js/aws-amplify.min.js"></script>
     <script type="module" src="js/main.js"></script>
 </body>
 </html>

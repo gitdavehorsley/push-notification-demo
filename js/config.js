@@ -1,15 +1,7 @@
-// Environment-specific configuration
 const config = {
-    dev: {
-        API_ENDPOINT: 'https://p674zxo5d0.execute-api.us-east-1.amazonaws.com/dev/validate'
-    },
-    prod: {
-        API_ENDPOINT: '/validate' // In prod, API Gateway URL will be determined by Amplify
-    }
+    API_ENDPOINT: 'https://p674zxo5d0.execute-api.us-east-1.amazonaws.com/dev/phone'
 };
 
-// Determine environment based on URL
-const isProduction = window.location.hostname.includes('amplifyapp.com');
-const currentConfig = isProduction ? config.prod : config.dev;
+const currentConfig = config;
 
 export default currentConfig;

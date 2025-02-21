@@ -1,11 +1,17 @@
 {
   "version": 1,
   "paths": {
-    "/phone": {
-      "name": "/phone",
+    "/validate": {
+      "name": "/validate",
       "lambdaFunction": "pushnotificationdemo1e717369",
       "permissions": {
         "setting": "open"
+      },
+      "cors": {
+        "origins": ["*"],
+        "methods": ["OPTIONS", "POST"],
+        "headers": ["Content-Type", "Authorization"],
+        "allowCredentials": false
       }
     }
   }

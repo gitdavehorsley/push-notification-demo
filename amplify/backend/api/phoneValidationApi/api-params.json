@@ -6,7 +6,13 @@
       "permissions": {
         "setting": "open"
       },
-      "methods": ["POST"]
+      "methods": ["POST", "OPTIONS"],
+      "cors": {
+        "origins": ["*"],
+        "methods": ["OPTIONS", "POST"],
+        "headers": ["Content-Type", "Authorization"],
+        "allowCredentials": false
+      }
     }
   }
 }

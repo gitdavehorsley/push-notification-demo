@@ -25,15 +25,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // Signup button handler
     signupButton.addEventListener('click', async () => {
         try {
-            const phoneNumber = '+1' + phoneInput.value.replace(/\D/g, '');
+            const rawNumber = phoneInput.value.replace(/\D/g, '');
+            console.log('Raw phone number:', rawNumber);
             
-            if (phoneNumber.length !== 12) { // +1 plus 10 digits
+            const phoneNumber = '+1' + rawNumber;
+            console.log('Formatted phone number:', phoneNumber);
+            
+            if (rawNumber.length !== 10) {
                 updateStatus('Please enter a valid 10-digit phone number', 'error');
                 return;
             }
 
             if (!verificationInProgress) {
                 // Send OTP
+                console.log('Sending request to:', config.API_ENDPOINT);
                 const response = await fetch(config.API_ENDPOINT, {
                     method: 'POST',
                     headers: {
@@ -44,7 +49,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         phoneNumber: phoneNumber
                     })
                 });
+                console.log('Response status:', response.status);
+                console.log('Response headers:', Object.fromEntries(response.headers.entries()));
                 const data = await response.json();
+                console.log('Response data:', data);
                 
                 if (!data.error) {
                     // Show OTP input field
@@ -104,8 +112,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         } catch (error) {
-            console.error('Error:', error);
-            updateStatus('An error occurred during signup', 'error');
+            console.error('Error details:', {
+                message: error.message,
+                stack: error.stack,
+                error
+            });
+            updateStatus('An error occurred during signup. Check console for details.', 'error');
         }
     });
 

@@ -10,7 +10,7 @@ const snsClient = new SNSClient({ region: process.env.REGION });
 const otpStore = new Map();
 
 const generateOTP = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return Math.floor(1000 + Math.random() * 9000).toString();
 };
 
 const sendOTP = async (phoneNumber, otp) => {

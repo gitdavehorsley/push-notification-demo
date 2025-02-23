@@ -28,13 +28,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const rawNumber = phoneInput.value.replace(/\D/g, '');
             console.log('Raw phone number:', rawNumber);
             
-            const phoneNumber = '+1' + rawNumber;
-            console.log('Formatted phone number:', phoneNumber);
-            
-            if (rawNumber.length !== 10) {
+            // Validate phone number format
+            if (!/^\d{10}$/.test(rawNumber)) {
                 updateStatus('Please enter a valid 10-digit phone number', 'error');
                 return;
             }
+            
+            const phoneNumber = '+1' + rawNumber; // TODO: Make country code configurable
+            console.log('Formatted phone number:', phoneNumber);
 
             if (!verificationInProgress) {
                 // Send OTP
@@ -54,26 +55,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
                 console.log('Response data:', data);
                 
-                if (!data.error) {
-                    // Show OTP input field
-                    verificationInProgress = true;
-                    signupButton.textContent = 'VERIFY CODE';
-                    
-                    // Create OTP input if it doesn't exist
-                    if (!otpInputElement) {
-                        otpInputElement = document.createElement('input');
-                        otpInputElement.type = 'text';
-                        otpInputElement.id = 'otpInput';
-                        otpInputElement.placeholder = 'Enter 4-digit code';
-                        otpInputElement.maxLength = 4;
-                        otpInputElement.pattern = '[0-9]*';
-                        phoneInput.parentNode.insertBefore(otpInputElement, signupButton);
-                    }
-                    
-                    updateStatus('Verification code sent to your phone', 'success');
-                } else {
-                    updateStatus(data.message || 'Error sending verification code', 'error');
+                if (data.error) {
+                    updateStatus(data.error, 'error');
+                    return;
                 }
+                
+                // Show OTP input field
+                verificationInProgress = true;
+                signupButton.textContent = 'VERIFY CODE';
+                
+                // Create OTP input if it doesn't exist
+                if (!otpInputElement) {
+                    otpInputElement = document.createElement('input');
+                    otpInputElement.type = 'text';
+                    otpInputElement.id = 'otpInput';
+                    otpInputElement.placeholder = 'Enter 4-digit code';
+                    otpInputElement.maxLength = 4;
+                    otpInputElement.pattern = '[0-9]*';
+                    otpInputElement.className = 'otp-input';
+                    phoneInput.parentNode.insertBefore(otpInputElement, signupButton);
+                }
+                
+                updateStatus(data.message || 'Verification code sent to your phone', 'success');
             } else {
                 // Verify OTP
                 const otpCode = otpInputElement.value;
@@ -96,20 +99,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 const data = await response.json();
                 
-                if (!data.error) {
-                    // Remove OTP input and reset state
-                    if (otpInputElement) {
-                        otpInputElement.remove();
-                        otpInputElement = null;
-                    }
-                    verificationInProgress = false;
-                    signupButton.textContent = 'SIGNED UP';
-                    phoneInput.disabled = true;
-                    signupButton.disabled = true;
-                    updateStatus('Successfully signed up for notifications!', 'success');
-                } else {
-                    updateStatus(data.message || 'Invalid verification code', 'error');
+                if (data.error) {
+                    updateStatus(data.error, 'error');
+                    return;
                 }
+                
+                // Remove OTP input and reset state
+                if (otpInputElement) {
+                    otpInputElement.remove();
+                    otpInputElement = null;
+                }
+                verificationInProgress = false;
+                signupButton.textContent = 'SIGNED UP';
+                phoneInput.disabled = true;
+                signupButton.disabled = true;
+                updateStatus(data.message || 'Successfully signed up for notifications!', 'success');
             }
         } catch (error) {
             console.error('Error details:', {

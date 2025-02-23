@@ -1,7 +1,7 @@
 {
   "paths": {
-    "/validate": {
-      "name": "/validate",
+    "/verify": {
+      "name": "/verify",
       "lambdaFunction": "pushnotificationdemo1e717369",
       "permissions": {
         "setting": "open"

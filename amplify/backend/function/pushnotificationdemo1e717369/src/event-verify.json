@@ -1,0 +1,8 @@
+{
+  "httpMethod": "POST",
+  "path": "/verify",
+  "body": "{\"action\":\"verifyOTP\",\"phoneNumber\":\"+1234567890\",\"deviceId\":\"test-device-id\",\"otp\":\"1234\"}",
+  "headers": {
+    "Content-Type": "application/json"
+  }
+}

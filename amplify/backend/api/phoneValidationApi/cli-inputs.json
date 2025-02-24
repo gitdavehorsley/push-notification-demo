@@ -10,8 +10,15 @@
       "cors": {
         "origins": ["*"],
         "methods": ["OPTIONS", "POST"],
-        "headers": ["Content-Type", "Authorization"],
-        "allowCredentials": false
+        "headers": [
+          "Content-Type",
+          "Authorization",
+          "Access-Control-Allow-Origin",
+          "Access-Control-Allow-Headers",
+          "Access-Control-Allow-Methods"
+        ],
+        "allowCredentials": false,
+        "maxAge": 300
       }
     }
   }

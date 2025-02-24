@@ -58,7 +58,7 @@ exports.handler = async (event) => {
     // CORS headers
     const headers = {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
       "Access-Control-Allow-Methods": "OPTIONS,POST"
     };
 
@@ -165,7 +165,9 @@ exports.handler = async (event) => {
     return {
       statusCode: 500,
       headers: {
-        "Access-Control-Allow-Origin": "*"
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Allow-Methods": "OPTIONS,POST"
       },
       body: JSON.stringify({ error: 'Internal server error' })
     };

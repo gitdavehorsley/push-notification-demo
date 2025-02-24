@@ -1,4 +1,9 @@
 version: 1
+backend:
+  phases:
+    build:
+      commands:
+        - cd amplify/backend/function/pushnotificationdemo1e717369/src && npm install
 frontend:
   phases:
     preBuild:

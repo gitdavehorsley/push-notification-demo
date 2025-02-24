@@ -111,9 +111,13 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Code:
         ZipFile: |
-          const AWS = require('aws-sdk');
-          const dynamodb = new AWS.DynamoDB.DocumentClient();
-          const sns = new AWS.SNS();
+          const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
+          const { DynamoDBDocumentClient, PutCommand, GetCommand, DeleteCommand, UpdateCommand } = require("@aws-sdk/lib-dynamodb");
+          const { SNSClient, PublishCommand } = require("@aws-sdk/client-sns");
+
+          const ddbClient = new DynamoDBClient({ region: process.env.AWS_REGION });
+          const docClient = DynamoDBDocumentClient.from(ddbClient);
+          const snsClient = new SNSClient({ region: process.env.AWS_REGION });
 
           const SUBSCRIBERS_TABLE = process.env.SUBSCRIBERS_TABLE;
           const VERIFICATION_CODES_TABLE = process.env.VERIFICATION_CODES_TABLE;
@@ -128,7 +132,7 @@ Resources:
             const otp = generateOTP();
             const expirationTime = Math.floor(Date.now() / 1000) + (OTP_EXPIRATION_MINUTES * 60);
             
-            await dynamodb.put({
+            await docClient.send(new PutCommand({
               TableName: VERIFICATION_CODES_TABLE,
               Item: {
                 phone_number: phoneNumber,
@@ -136,21 +140,21 @@ Resources:
                 expiration_time: expirationTime,
                 attempts: 0
               }
-            }).promise();
+            }));
 
-            await sns.publish({
+            await snsClient.send(new PublishCommand({
               Message: `Your verification code is: ${otp}. It will expire in ${OTP_EXPIRATION_MINUTES} minutes.`,
               PhoneNumber: phoneNumber
-            }).promise();
+            }));
 
             return { success: true, message: 'OTP sent successfully' };
           }
 
           async function verifyOTP(phoneNumber, otpCode, deviceId) {
-            const verificationRecord = await dynamodb.get({
+            const verificationRecord = await docClient.send(new GetCommand({
               TableName: VERIFICATION_CODES_TABLE,
               Key: { phone_number: phoneNumber }
-            }).promise();
+            }));
 
             if (!verificationRecord.Item) {
               return { success: false, message: 'No verification code found' };
@@ -160,33 +164,33 @@ Resources:
             const currentTime = Math.floor(Date.now() / 1000);
 
             if (currentTime > record.expiration_time) {
-              await dynamodb.delete({
+              await docClient.send(new DeleteCommand({
                 TableName: VERIFICATION_CODES_TABLE,
                 Key: { phone_number: phoneNumber }
-              }).promise();
+              }));
               return { success: false, message: 'Verification code expired' };
             }
 
             if (record.attempts >= MAX_OTP_ATTEMPTS) {
-              await dynamodb.delete({
+              await docClient.send(new DeleteCommand({
                 TableName: VERIFICATION_CODES_TABLE,
                 Key: { phone_number: phoneNumber }
-              }).promise();
+              }));
               return { success: false, message: 'Maximum attempts exceeded' };
             }
 
             if (record.otp_code !== otpCode) {
-              await dynamodb.update({
+              await docClient.send(new UpdateCommand({
                 TableName: VERIFICATION_CODES_TABLE,
                 Key: { phone_number: phoneNumber },
                 UpdateExpression: 'SET attempts = attempts + :inc',
                 ExpressionAttributeValues: { ':inc': 1 }
-              }).promise();
+              }));
               return { success: false, message: 'Invalid verification code' };
             }
 
             // OTP is valid, store subscriber info
-            await dynamodb.put({
+            await docClient.send(new PutCommand({
               TableName: SUBSCRIBERS_TABLE,
               Item: {
                 phone_number: phoneNumber,
@@ -194,13 +198,13 @@ Resources:
                 subscription_date: new Date().toISOString(),
                 verified: true
               }
-            }).promise();
+            }));
 
             // Delete verification record
-            await dynamodb.delete({
+            await docClient.send(new DeleteCommand({
               TableName: VERIFICATION_CODES_TABLE,
               Key: { phone_number: phoneNumber }
-            }).promise();
+            }));
 
             return { success: true, message: 'Phone number verified successfully' };
           }

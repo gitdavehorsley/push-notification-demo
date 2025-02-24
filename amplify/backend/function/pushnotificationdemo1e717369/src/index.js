@@ -2,6 +2,13 @@ const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
 const { DynamoDBDocumentClient, PutCommand, GetCommand } = require("@aws-sdk/lib-dynamodb");
 const { SNSClient, PublishCommand } = require("@aws-sdk/client-sns");
 
+// CORS headers for all responses
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "https://master.d3ljvakgnw3v0h.amplifyapp.com",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Methods": "OPTIONS,POST"
+};
+
 const ddbClient = new DynamoDBClient({ region: process.env.REGION });
 const docClient = DynamoDBDocumentClient.from(ddbClient);
 const snsClient = new SNSClient({ region: process.env.REGION });
@@ -51,30 +58,23 @@ const storePhoneAndDevice = async (phoneNumber, deviceId) => {
  * @type {import('@types/aws-lambda').APIGatewayProxyHandler}
  */
 exports.handler = async (event) => {
+  // Handle preflight requests first
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: corsHeaders,
+      body: ''
+    };
+  }
+
   try {
     const body = JSON.parse(event.body);
     const { action, phoneNumber, deviceId, otp } = body;
 
-    // CORS headers
-    const headers = {
-      "Access-Control-Allow-Origin": "https://master.d3ljvakgnw3v0h.amplifyapp.com",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      "Access-Control-Allow-Methods": "OPTIONS,POST"
-    };
-
-    // Handle preflight requests
-    if (event.httpMethod === 'OPTIONS') {
-      return {
-        statusCode: 200,
-        headers,
-        body: ''
-      };
-    }
-
     if (!phoneNumber) {
       return {
         statusCode: 400,
-        headers,
+        headers: corsHeaders,
         body: JSON.stringify({ error: 'Phone number is required' })
       };
     }
@@ -87,7 +87,7 @@ exports.handler = async (event) => {
         if (!sent) {
           return {
             statusCode: 500,
-            headers,
+            headers: corsHeaders,
             body: JSON.stringify({ error: 'Failed to send OTP' })
           };
         }
@@ -100,7 +100,7 @@ exports.handler = async (event) => {
 
         return {
           statusCode: 200,
-          headers,
+          headers: corsHeaders,
           body: JSON.stringify({ message: 'OTP sent successfully' })
         };
       }
@@ -109,7 +109,7 @@ exports.handler = async (event) => {
         if (!deviceId || !otp) {
           return {
             statusCode: 400,
-            headers,
+            headers: corsHeaders,
             body: JSON.stringify({ error: 'Device ID and OTP are required' })
           };
         }
@@ -119,7 +119,7 @@ exports.handler = async (event) => {
         if (!storedData || storedData.expires < Date.now()) {
           return {
             statusCode: 400,
-            headers,
+            headers: corsHeaders,
             body: JSON.stringify({ error: 'OTP expired or invalid' })
           };
         }
@@ -127,7 +127,7 @@ exports.handler = async (event) => {
         if (storedData.otp !== otp) {
           return {
             statusCode: 400,
-            headers,
+            headers: corsHeaders,
             body: JSON.stringify({ error: 'Invalid OTP' })
           };
         }
@@ -138,7 +138,7 @@ exports.handler = async (event) => {
         if (!stored) {
           return {
             statusCode: 500,
-            headers,
+            headers: corsHeaders,
             body: JSON.stringify({ error: 'Failed to store device registration' })
           };
         }
@@ -148,7 +148,7 @@ exports.handler = async (event) => {
 
         return {
           statusCode: 200,
-          headers,
+          headers: corsHeaders,
           body: JSON.stringify({ message: 'Phone number verified and device registered successfully' })
         };
       }
@@ -156,7 +156,7 @@ exports.handler = async (event) => {
       default:
         return {
           statusCode: 400,
-          headers,
+          headers: corsHeaders,
           body: JSON.stringify({ error: 'Invalid action' })
         };
     }
@@ -164,11 +164,7 @@ exports.handler = async (event) => {
     console.error('Error:', error);
     return {
       statusCode: 500,
-      headers: {
-        "Access-Control-Allow-Origin": "https://master.d3ljvakgnw3v0h.amplifyapp.com",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        "Access-Control-Allow-Methods": "OPTIONS,POST"
-      },
+      headers: corsHeaders,
       body: JSON.stringify({ error: 'Internal server error' })
     };
   }

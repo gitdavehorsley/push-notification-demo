@@ -11,7 +11,8 @@
         "origins": ["*"],
         "methods": ["OPTIONS", "POST"],
         "headers": ["Content-Type", "Authorization"],
-        "allowCredentials": false
+        "allowCredentials": false,
+        "maxAge": 3600
       }
     }
   }

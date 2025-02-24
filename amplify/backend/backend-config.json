@@ -43,7 +43,14 @@
     "pushnotificationdemo1e717369": {
       "build": true,
       "providerPlugin": "awscloudformation",
-      "service": "Lambda"
+      "service": "Lambda",
+      "dependsOn": [
+        {
+          "category": "api",
+          "resourceName": "phoneValidationApi",
+          "attributes": ["Name"]
+        }
+      ]
     }
   },
   "parameters": {

@@ -8,7 +8,7 @@
       },
       "methods": ["POST", "OPTIONS"],
       "cors": {
-        "origins": ["*"],
+        "origins": ["https://master.d3ljvakgnw3v0h.amplifyapp.com"],
         "methods": ["OPTIONS", "POST"],
         "headers": ["Content-Type", "Authorization"],
         "allowCredentials": false,

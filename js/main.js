@@ -45,8 +45,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    mode: 'cors',
-                    credentials: 'omit',
                     body: JSON.stringify({
                         action: 'sendOTP',
                         phoneNumber: phoneNumber
@@ -92,8 +90,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    mode: 'cors',
-                    credentials: 'omit',
                     body: JSON.stringify({
                         action: 'verifyOTP',
                         phoneNumber: phoneNumber,

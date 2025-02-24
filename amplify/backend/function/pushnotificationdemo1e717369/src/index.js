@@ -4,9 +4,9 @@ const { SNSClient, PublishCommand } = require("@aws-sdk/client-sns");
 
 // CORS headers for all responses
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "https://master.d3ljvakgnw3v0h.amplifyapp.com",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  "Access-Control-Allow-Methods": "OPTIONS,POST"
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
+  "Access-Control-Allow-Methods": "OPTIONS,POST,GET"
 };
 
 const ddbClient = new DynamoDBClient({ region: process.env.REGION });

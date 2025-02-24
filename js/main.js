@@ -1,4 +1,14 @@
+import { Amplify } from 'aws-amplify';
+import { generateClient } from 'aws-amplify/data';
 import config from './config.js';
+
+// Configure Amplify
+Amplify.configure({
+    // Configuration will be auto-injected by Amplify
+});
+
+// Generate Data client
+const client = generateClient();
 
 document.addEventListener('DOMContentLoaded', () => {
     const phoneInput = document.getElementById('phoneInput');
@@ -38,22 +48,21 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Formatted phone number:', phoneNumber);
 
             if (!verificationInProgress) {
-                // Send OTP
-                console.log('Sending request to:', config.API_ENDPOINT);
-                const response = await fetch(config.API_ENDPOINT, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'sendOTP',
-                        phoneNumber: phoneNumber
-                    })
+                // Generate a random 4-digit code
+                const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
+                
+                // Create subscription record with verification code
+                await client.models.PhoneSubscription.create({
+                    phoneNumber: phoneNumber,
+                    deviceId: 'web-' + Date.now(),
+                    verified: false,
+                    verificationCode: verificationCode,
+                    createdAt: new Date().toISOString()
                 });
-                // In no-cors mode, we can't read the response
-                // We'll assume success if the request didn't throw an error
-                console.log('Request sent successfully');
+
+                // TODO: In a production environment, you would integrate with a service like SNS or Twilio
+                // to actually send the SMS. For now, we'll just log it.
+                console.log('Verification code (demo):', verificationCode);
                 
                 // Show OTP input field
                 verificationInProgress = true;
@@ -79,22 +88,33 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                const response = await fetch(config.API_ENDPOINT, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'verifyOTP',
-                        phoneNumber: phoneNumber,
-                        otp: otpCode,
-                        deviceId: 'web-' + Date.now() // Simple device ID generation
-                    })
+                // Find the subscription record
+                const subscriptions = await client.models.PhoneSubscription.list({
+                    filter: {
+                        phoneNumber: { eq: phoneNumber },
+                        verified: { eq: false }
+                    }
                 });
-                // In no-cors mode, we can't read the response
-                // We'll assume success if the request didn't throw an error
-                console.log('Verification request sent successfully');
+
+                if (subscriptions.length === 0) {
+                    updateStatus('No pending verification found', 'error');
+                    return;
+                }
+
+                const subscription = subscriptions[0];
+                
+                if (subscription.verificationCode !== otpCode) {
+                    updateStatus('Invalid verification code', 'error');
+                    return;
+                }
+
+                // Update subscription as verified
+                await client.models.PhoneSubscription.update({
+                    id: subscription.id,
+                    verified: true
+                });
+
+                console.log('Subscription verified successfully');
                 
                 // Remove OTP input and reset state
                 if (otpInputElement) {
